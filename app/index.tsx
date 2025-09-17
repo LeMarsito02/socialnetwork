@@ -1,31 +1,52 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+// app/index.tsx
+import { useContext, useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { AuthContext } from "@/contexts/AuthContext";
+import { LinearGradient } from "expo-linear-gradient";
+import { MotiView } from "moti";
 
 export default function Index() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 👈 controla login real después
+  const { user, loading } = useContext(AuthContext);
 
   useEffect(() => {
-    // Simula chequeo de sesión
-    setTimeout(() => {
-      if (isLoggedIn) {
-        router.replace("/(main)"); // 👈 apunta a index dentro de (main)
+    if (!loading) {
+      if (user) {
+        router.replace("/(main)");
       } else {
-        router.replace("/(auth)/login"); // 👈 apunta al login en (auth)
+        router.replace("/(auth)/login");
       }
-      setLoading(false);
-    }, 1500);
-  }, [isLoggedIn]);
+    }
+  }, [loading, user]);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0554F2" />
-      </View>
+      <LinearGradient colors={["#0554F2", "#3098F2"]} style={styles.container}>
+        <MotiView
+          from={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "timing", duration: 1000 }}
+          style={styles.logoContainer}
+        >
+          <Text style={styles.logo}>LeMarTek</Text>
+          <Text style={styles.subtitle}>Cloud for Students 🚀</Text>
+        </MotiView>
+      </LinearGradient>
     );
   }
 
   return null;
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
+  logoContainer: { alignItems: "center" },
+  logo: {
+    fontSize: 40,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 10,
+  },
+  subtitle: { fontSize: 16, color: "#f0f0f0" },
+});

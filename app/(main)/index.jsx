@@ -1,7 +1,15 @@
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  Image, 
+  TouchableOpacity 
+} from "react-native";
 import { Heart, MessageCircle, Send } from "lucide-react-native"; 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";  // ✅ importa router
+import { useRouter } from "expo-router";
+import { MotiView } from "moti";
 
 const posts = [
   {
@@ -28,7 +36,7 @@ const posts = [
 ];
 
 export default function HomeScreen() {
-  const router = useRouter(); // ✅ ahora sí dentro del componente
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,8 +44,13 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>StudentHub</Text>
         <View style={styles.headerIcons}>
-          <Heart size={24} color="#000" style={styles.icon} />
-          <TouchableOpacity onPress={() => router.push("/(main)/messages")}>
+          <TouchableOpacity activeOpacity={0.7}>
+            <Heart size={24} color="#000" style={styles.icon} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => router.push("/(main)/messages")} 
+            activeOpacity={0.7}
+          >
             <Send size={24} color="#000" />
           </TouchableOpacity>
         </View>
@@ -47,8 +60,13 @@ export default function HomeScreen() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.postCard}>
+        renderItem={({ item, index }) => (
+          <MotiView
+            from={{ opacity: 0, translateY: 40 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: index * 200, type: "timing" }}
+            style={styles.postCard}
+          >
             {/* User Info */}
             <View style={styles.postHeader}>
               <Image source={{ uri: item.avatar }} style={styles.avatar} />
@@ -60,14 +78,14 @@ export default function HomeScreen() {
 
             {/* Post Actions */}
             <View style={styles.actions}>
-              <TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.6}>
                 <Heart size={22} color="#e63946" />
               </TouchableOpacity>
-              <TouchableOpacity>
-                <MessageCircle size={22} color="#000" style={{ marginLeft: 12 }} />
+              <TouchableOpacity activeOpacity={0.6}>
+                <MessageCircle size={22} color="#000" style={{ marginLeft: 14 }} />
               </TouchableOpacity>
-              <TouchableOpacity>
-                <Send size={22} color="#000" style={{ marginLeft: 12 }} />
+              <TouchableOpacity activeOpacity={0.6}>
+                <Send size={22} color="#000" style={{ marginLeft: 14 }} />
               </TouchableOpacity>
             </View>
 
@@ -76,9 +94,10 @@ export default function HomeScreen() {
               <Text style={styles.username}>{item.user} </Text>
               {item.caption}
             </Text>
-          </View>
+          </MotiView>
         )}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
       />
     </SafeAreaView>
   );
@@ -87,17 +106,21 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#f4f6fa",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   logo: {
     fontSize: 22,
@@ -108,40 +131,49 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   icon: {
-    marginLeft: 16,
+    marginRight: 18,
   },
   postCard: {
     backgroundColor: "#fff",
     marginBottom: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   postHeader: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 12,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     marginRight: 10,
   },
   username: {
     fontWeight: "bold",
     fontSize: 14,
+    color: "#111",
   },
   postImage: {
     width: "100%",
-    height: 350,
+    height: 360,
+    resizeMode: "cover",
   },
   actions: {
     flexDirection: "row",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   caption: {
-    paddingHorizontal: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 12,
+    paddingBottom: 14,
     fontSize: 14,
     color: "#333",
+    lineHeight: 20,
   },
 });

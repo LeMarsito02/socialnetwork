@@ -8,164 +8,216 @@ import {
   KeyboardAvoidingView, 
   Platform 
 } from "react-native";
-import { Link, useRouter } from "expo-router";  // 👈 importa el hook correcto
+import { useRouter, Link } from "expo-router";
+import React, { useContext, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { MotiView, MotiText } from "moti";
+import { AuthContext } from "@/contexts/AuthContext";
 
 export default function EntryPoint() {
-  const router = useRouter(); // 👈 inicializa router
+  const router = useRouter();
+  const context = useContext(AuthContext);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    const response = await context.login(email, password);
+    if (response) {
+      router.navigate("/(main)");
+    } else {
+      console.log("Credenciales inválidas");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >          
-        <View style={styles.main}>
-          {/* Caja principal */}
-          <View style={styles.card}>
-            {/* Decoración superior */}
-            <View style={[styles.circle, styles.topCircle]} />
-            <View style={[styles.circle, styles.topCircle2]} />
+      <LinearGradient 
+        colors={["#0554F2", "#3098F2", "#67C6F2"]} 
+        style={styles.gradient}
+      >
+        {/* Fondos decorativos */}
+        <View style={[styles.circle, styles.circle1]} />
+        <View style={[styles.circle, styles.circle2]} />
+        <View style={[styles.circle, styles.circle3]} />
 
-            {/* Decoración inferior */}
-            <View style={[styles.circle, styles.bottomCircle]} />
-            <View style={[styles.circle, styles.bottomCircle2]} />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >          
+          <View style={styles.main}>
+            <MotiView 
+              from={{ opacity: 0, translateY: 40 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: "spring", damping: 15 }}
+              style={styles.card}
+            >
+              {/* Títulos */}
+              <MotiText 
+                from={{ opacity: 0, translateY: -20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ delay: 150 }}
+                style={styles.title}
+              >
+                Welcome to{"\n"}StudentHub by LeMarTek
+              </MotiText>
+              
+              <MotiText 
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 300 }}
+                style={styles.subtitle}
+              >
+                Hey! Sign in with your LeMarTek student account
+              </MotiText>
 
-            {/* Contenido */}
-            <Text style={styles.title}>Welcome to{"\n"}StudentHub by LeMarTek</Text>
-            <Text style={styles.subtitle}>Hey! Sign in with your LeMarTek student account</Text>
+              {/* Inputs */}
+              <MotiView 
+                from={{ opacity: 0, translateX: -40 }}
+                animate={{ opacity: 1, translateX: 0 }}
+                transition={{ delay: 500 }}
+              >
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#999"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                />
+              </MotiView>
 
-            {/* Inputs */}
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#888"
-              keyboardType="email-address"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#888"
-              secureTextEntry
-            />
-            {/* Botón de login */}
-            <Link href="/(main)" asChild>
-                    <TouchableOpacity style={styles.button}>
-                        <Text style={styles.buttonText}>Login</Text>
-                    </TouchableOpacity>
+              <MotiView 
+                from={{ opacity: 0, translateX: 40 }}
+                animate={{ opacity: 1, translateX: 0 }}
+                transition={{ delay: 650 }}
+              >
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </MotiView>
+
+              {/* Botón de login */}
+              <MotiView 
+                from={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 800, type: "spring" }}
+              >
+                <TouchableOpacity onPress={handleLogin} activeOpacity={0.85}>
+                  <LinearGradient 
+                    colors={["#0554F2", "#3098F2"]}
+                    style={styles.button}
+                  >
+                    <Text style={styles.buttonText}>Login</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </MotiView>
+
+              {/* Links */}
+            <Link href="/recover" asChild>
+              <MotiText 
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1000 }}
+                style={styles.forgotPassword}
+              >
+                Forgot your password?
+              </MotiText>
             </Link>
-            {/* Links */}
-            <TouchableOpacity>
-              <Text style={styles.forgotPassword}>Forgot your password?</Text>
-            </TouchableOpacity>
-
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don’t have an account?</Text>
-              <TouchableOpacity>
-                <Text style={styles.registerLink}> Sign up</Text>
-              </TouchableOpacity>
-
-            </View>
+              <MotiView 
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1150 }}
+                style={styles.registerContainer}
+              >
+                <Text style={styles.registerText}>Don’t have an account?</Text>
+                <Link href="/register" asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.registerLink}> Sign up</Text>
+                  </TouchableOpacity>
+                </Link>
+              </MotiView>
+            </MotiView>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  main: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
+  safeArea: { flex: 1 },
+  gradient: { flex: 1 },
+  main: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    paddingHorizontal: 20,
   },
   card: {
-    flex: 1,
     width: "100%",
     backgroundColor: "#fff",
-    padding: 30,
-    overflow: "hidden",
-    position: "relative",
-  },
-  circle: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "#0554F2",
-  },
-  topCircle: {
-    top: -80,
-    right: -80,
-    opacity: 0.9,
-  },
-  topCircle2: {
-    top: -65,
-    right: -65,
-    opacity: 0.6,
-    backgroundColor: "#3098F2",
-  },
-  bottomCircle: {
-    bottom: -80,
-    left: -80,
-    opacity: 0.9,
-  },
-  bottomCircle2: {
-    bottom: -80,
-    left: -60,
-    opacity: 0.6,
-    backgroundColor: "#3098F2",
+    borderRadius: 24,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#000",
-    marginTop: 40,
+    color: "#111",
+    marginBottom: 10,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#555",
-    marginBottom: 20,
+    marginBottom: 25,
+    textAlign: "center",
   },
   input: {
     width: "100%",
-    height: 50,
+    height: 52,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
+    borderColor: "#eee",
+    borderRadius: 14,
     paddingHorizontal: 15,
-    marginTop: 15,
+    marginBottom: 15,
     backgroundColor: "#f9f9f9",
     fontSize: 16,
   },
   button: {
     width: "100%",
-    height: 50,
-    backgroundColor: "#0554F2",
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 25,
+    marginTop: 10,
   },
   buttonText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   forgotPassword: {
     color: "#0554F2",
-    marginTop: 15,
+    marginTop: 18,
     textAlign: "center",
     fontSize: 14,
   },
   registerContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 25,
+    marginTop: 20,
     flexWrap: "wrap",
   },
   registerText: {
@@ -176,5 +228,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#0554F2",
     fontWeight: "bold",
+  },
+  // Círculos decorativos
+  circle: {
+    position: "absolute",
+    borderRadius: 200,
+    opacity: 0.25,
+  },
+  circle1: {
+    width: 300,
+    height: 300,
+    backgroundColor: "#fff",
+    top: -100,
+    left: -100,
+  },
+  circle2: {
+    width: 200,
+    height: 200,
+    backgroundColor: "#3098F2",
+    bottom: 50,
+    right: -80,
+  },
+  circle3: {
+    width: 150,
+    height: 150,
+    backgroundColor: "#67C6F2",
+    bottom: -50,
+    left: -50,
   },
 });

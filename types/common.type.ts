@@ -1,0 +1,23 @@
+export interface User {
+    id?: string,
+    email: string,
+    name: string,
+    username?: string,
+    avatar_url?: string,
+    cover_url?: string,
+    bio?: string,
+    website?: string,
+    location?: string,
+    birth_date?: string,
+    phone?: string,
+    gender?: string,
+    is_verified?: boolean,
+    is_private?: boolean,
+    followers_count?: number,
+    following_count?: number,
+    posts_count?: number,
+    likes_count?: number,
+    last_active?: string,
+    created_at?: string,
+    updated_at?: string
+}

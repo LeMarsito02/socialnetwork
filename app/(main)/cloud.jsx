@@ -13,7 +13,7 @@ export default function CloudDashboard() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>LeMarTek CloudMonitor</Text>
+        <Text style={styles.logo}>☁️ LeMarTek Cloud</Text>
         <View style={styles.userInfo}>
           <Text style={styles.username}>LeMarTek</Text>
           <Text style={styles.plan}>Plan: Premium</Text>
@@ -25,7 +25,7 @@ export default function CloudDashboard() {
         <View style={styles.metric}>
           <Text style={styles.metricLabel}>RAM</Text>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: "65%" }]} />
+            <View style={[styles.progressFill, { width: "65%", backgroundColor: "#3b82f6" }]} />
           </View>
           <Text style={styles.metricValue}>6.5 GB / 10 GB</Text>
         </View>
@@ -33,7 +33,7 @@ export default function CloudDashboard() {
         <View style={styles.metric}>
           <Text style={styles.metricLabel}>CPU</Text>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: "40%" }]} />
+            <View style={[styles.progressFill, { width: "40%", backgroundColor: "#facc15" }]} />
           </View>
           <Text style={styles.metricValue}>40%</Text>
         </View>
@@ -41,7 +41,7 @@ export default function CloudDashboard() {
         <View style={styles.metric}>
           <Text style={styles.metricLabel}>Servicios activos</Text>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: "75%" }]} />
+            <View style={[styles.progressFill, { width: "75%", backgroundColor: "#22c55e" }]} />
           </View>
           <Text style={styles.metricValue}>3 / 4</Text>
         </View>
@@ -55,7 +55,17 @@ export default function CloudDashboard() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text>Status: <Text style={{ color: item.status === "Activo" ? "green" : "red" }}>{item.status}</Text></Text>
+            <Text>
+              Estado:{" "}
+              <Text
+                style={{
+                  color: item.status === "Activo" ? "#22c55e" : "#ef4444",
+                  fontWeight: "bold",
+                }}
+              >
+                {item.status}
+              </Text>
+            </Text>
             <Text>Usuarios activos: {item.users}</Text>
           </View>
         )}
@@ -67,20 +77,19 @@ export default function CloudDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f7fa",
+    backgroundColor: "#f0f4f9",
     paddingHorizontal: 16,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   logo: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#0554F2",
-    paddingLeft : 4
   },
   userInfo: {
     alignItems: "flex-end",
@@ -88,13 +97,10 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: "bold",
-    paddingRight :4,
-
   },
   plan: {
     fontSize: 14,
     color: "#555",
-    paddingRight :4,
   },
   metricsContainer: {
     flexDirection: "row",
@@ -103,34 +109,43 @@ const styles = StyleSheet.create({
   },
   metric: {
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: 6,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   metricLabel: {
     fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 4,
+    fontWeight: "600",
+    marginBottom: 6,
+    color: "#333",
   },
   progressBar: {
     height: 10,
-    backgroundColor: "#ddd",
+    backgroundColor: "#e5e7eb",
     borderRadius: 5,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#0554F2",
+    borderRadius: 5,
   },
   metricValue: {
     fontSize: 12,
     color: "#555",
-    marginTop: 2,
+    marginTop: 4,
   },
   cardsContainer: {
     paddingBottom: 20,
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     shadowColor: "#000",
@@ -143,5 +158,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginBottom: 6,
+    color: "#111",
   },
 });

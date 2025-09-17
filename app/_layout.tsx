@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export default function RootLayout() {
   // Detecta si el sistema está en dark/light
@@ -19,18 +20,21 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* Grupo de autenticación */}
-        <Stack.Screen name="(auth)" />
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <Stack screenOptions={{ headerShown: false }}>
+          {/* Grupo de autenticación */}
+          <Stack.Screen name="(auth)" />
 
-        {/* Grupo principal con Tabs */}
-        <Stack.Screen name="(main)" />
+          {/* Grupo principal con Tabs */}
+          <Stack.Screen name="(main)" />
 
-        {/* Pantalla fallback si la ruta no existe */}
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
+          {/* Pantalla fallback si la ruta no existe */}
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </ThemeProvider>
+    </AuthProvider>
+
   );
 }
