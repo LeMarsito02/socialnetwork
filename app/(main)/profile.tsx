@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Modal,
+  RefreshControl,
 } from "react-native";
 import {
   CheckCircle,
@@ -19,14 +20,16 @@ import {
   MoreVertical,
   Edit3,
 } from "lucide-react-native";
-import { useState, useContext } from "react";
+import { useState, useContext, useCallback } from "react";
 import { useRouter } from "expo-router";
 import { AuthContext } from "@/contexts/AuthContext";
 
 export default function Perfil() {
   const [activeTab, setActiveTab] = useState("posts");
   const [menuVisible, setMenuVisible] = useState(false);
-  const { user, logout } = useContext(AuthContext);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { user, logout,fetchUser } = useContext(AuthContext);
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -34,11 +37,21 @@ export default function Perfil() {
     await logout();
     router.replace("/(auth)/login");
   };
+
   const handleEditProfile = async () => {
     setMenuVisible(false);
     router.push("/(main)/editprofile");
   };
-  
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchUser(); // 🔄 recarga el usuario desde Supabase
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchUser]);
+
   const renderContent = () => {
     if (activeTab === "posts") {
       return (
@@ -71,27 +84,24 @@ export default function Perfil() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollScreen} >
+      <ScrollView
+        contentContainerStyle={styles.scrollScreen}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Portada */}
         <View style={styles.coverPhoto}>
-          <Image
-            source={{ uri: "https://picsum.photos/800/300" }}
-            style={styles.coverImage}
-          />
+          <Image source={{ uri: user?.cover_url }} style={styles.coverImage} />
         </View>
 
         {/* Foto de perfil */}
         <View style={styles.profileWrapper}>
           <View style={styles.avatarWrapper}>
             <Image
-              source={{
-                uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSq4RJtlHXPOmk6LjBrVrzyO6BNdvjSVBYW_g&s",
-              }}
+              source={{ uri: user?.avatar_url }}
               style={styles.profileImage}
             />
-            <TouchableOpacity style={styles.cameraIcon}>
-              <Camera size={18} color="#fff" />
-            </TouchableOpacity>
           </View>
           <View style={styles.userInfo}>
             <View style={styles.usernameRow}>
@@ -105,7 +115,7 @@ export default function Perfil() {
             <Text style={styles.handle}>@{user?.email?.split("@")[0]}</Text>
           </View>
 
-          {/* Botón menú (3 puntitos) */}
+          {/* Botón menú */}
           <TouchableOpacity onPress={() => setMenuVisible(true)}>
             <MoreVertical size={24} color="#000" />
           </TouchableOpacity>
@@ -181,7 +191,7 @@ export default function Perfil() {
         {renderContent()}
       </ScrollView>
 
-      {/* Menú Modal (abajo) */}
+      {/* Menú Modal */}
       <Modal
         visible={menuVisible}
         transparent
@@ -199,8 +209,11 @@ export default function Perfil() {
               <Text style={styles.menuText}>Cerrar sesión</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
-              <Edit3 size={18} color="#3b82f6" /> 
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleEditProfile}
+            >
+              <Edit3 size={18} color="#3b82f6" />
               <Text style={styles.menuText}>Editar perfil</Text>
             </TouchableOpacity>
           </View>
@@ -210,109 +223,109 @@ export default function Perfil() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff" },
-  scrollScreen: { paddingBottom: 100 },
-  container: { paddingBottom: 30 },
-  coverPhoto: { width: "100%", height: 180, backgroundColor: "#ccc" },
-  coverImage: { width: "100%", height: "100%" },
-  profileWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: -40,
-    paddingHorizontal: 20,
-    justifyContent: "space-between",
-  },
-  avatarWrapper: { position: "relative" },
-  profileImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 3,
-    borderColor: "#fff",
-  },
-  cameraIcon: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "#0554F2",
-    borderRadius: 20,
-    padding: 5,
-  },
-  userInfo: { marginLeft: 15, flex: 1 },
-  usernameRow: { flexDirection: "row", alignItems: "center" },
-  username: { fontSize: 22, fontWeight: "bold", color: "#000" },
-  handle: { fontSize: 14, color: "#555" },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 15,
-  },
-  stat: { alignItems: "center" },
-  statNumber: { fontSize: 18, fontWeight: "bold" },
-  statLabel: { fontSize: 12, color: "#666" },
-  actionsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-    marginBottom: 20,
-  },
-  followButton: {
-    backgroundColor: "#0554F2",
-    paddingVertical: 8,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-  },
-  followText: { color: "#fff", fontWeight: "600" },
-  shareButton: {
-    borderWidth: 1,
-    borderColor: "#0554F2",
-    borderRadius: 25,
-    padding: 10,
-  },
-  card: {
-    backgroundColor: "#f9fafb",
-    borderRadius: 16,
-    padding: 20,
-    margin: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#111",
-  },
-  bioText: { fontSize: 14, color: "#444", lineHeight: 20 },
-  tabs: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-    paddingVertical: 10,
-  },
-  tab: { alignItems: "center" },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  gridItem: { width: "33.33%", aspectRatio: 1 },
-  gridImage: { width: "100%", height: "100%" },
-  centered: { alignItems: "center", justifyContent: "center", height: 200 },
+  const styles = StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: "#fff" },
+    scrollScreen: { paddingBottom: 100 },
+    container: { paddingBottom: 30 },
+    coverPhoto: { width: "100%", height: 180, backgroundColor: "#ccc" },
+    coverImage: { width: "100%", height: "100%" },
+    profileWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: -40,
+      paddingHorizontal: 20,
+      justifyContent: "space-between",
+    },
+    avatarWrapper: { position: "relative" },
+    profileImage: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      borderWidth: 3,
+      borderColor: "#fff",
+    },
+    cameraIcon: {
+      position: "absolute",
+      bottom: 0,
+      right: 0,
+      backgroundColor: "#0554F2",
+      borderRadius: 20,
+      padding: 5,
+    },
+    userInfo: { marginLeft: 15, flex: 1 },
+    usernameRow: { flexDirection: "row", alignItems: "center" },
+    username: { fontSize: 22, fontWeight: "bold", color: "#000" },
+    handle: { fontSize: 14, color: "#555" },
+    statsRow: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      marginVertical: 15,
+    },
+    stat: { alignItems: "center" },
+    statNumber: { fontSize: 18, fontWeight: "bold" },
+    statLabel: { fontSize: 12, color: "#666" },
+    actionsRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 10,
+      marginBottom: 20,
+    },
+    followButton: {
+      backgroundColor: "#0554F2",
+      paddingVertical: 8,
+      paddingHorizontal: 30,
+      borderRadius: 25,
+    },
+    followText: { color: "#fff", fontWeight: "600" },
+    shareButton: {
+      borderWidth: 1,
+      borderColor: "#0554F2",
+      borderRadius: 25,
+      padding: 10,
+    },
+    card: {
+      backgroundColor: "#f9fafb",
+      borderRadius: 16,
+      padding: 20,
+      margin: 20,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "bold",
+      marginBottom: 10,
+      color: "#111",
+    },
+    bioText: { fontSize: 14, color: "#444", lineHeight: 20 },
+    tabs: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      borderBottomWidth: 1,
+      borderColor: "#eee",
+      paddingVertical: 10,
+    },
+    tab: { alignItems: "center" },
+    grid: { flexDirection: "row", flexWrap: "wrap" },
+    gridItem: { width: "33.33%", aspectRatio: 1 },
+    gridImage: { width: "100%", height: "100%" },
+    centered: { alignItems: "center", justifyContent: "center", height: 200 },
 
-  // Modal menu
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  bottomMenu: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  menuText: { fontSize: 16, marginLeft: 10, color: "#111" },
-});
+    // Modal menu
+    modalOverlay: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(0,0,0,0.3)",
+    },
+    bottomMenu: {
+      backgroundColor: "#fff",
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingVertical: 20,
+      paddingHorizontal: 30,
+    },
+    menuItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+    },
+    menuText: { fontSize: 16, marginLeft: 10, color: "#111" },
+  });
