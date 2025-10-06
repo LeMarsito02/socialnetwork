@@ -80,7 +80,7 @@
 
         return publicUrl;
       } catch (err: any) {
-        console.error("❌ Error subiendo imagen:", err.message);
+        console.error("Error subiendo imagen:", err.message);
       } finally {
         setUploading(false);
         await fetchUser(); 

@@ -32,6 +32,10 @@ export default function RootLayout() {
 
           {/* Pantalla fallback si la ruta no existe */}
           <Stack.Screen name="+not-found" />
+
+                    {/* Grupo principal con Tabs */}
+          <Stack.Screen name="chat" />
+
         </Stack>
       </ThemeProvider>
     </AuthProvider>

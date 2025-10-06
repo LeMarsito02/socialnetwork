@@ -52,14 +52,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <User size={22} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: "Mensajes",
-          tabBarIcon: ({ color }) => <MessageCircle size={22} color={color} />,
-          href: null, // se oculta del tab
-        }}
-      />
             <Tabs.Screen
         name="editprofile"
         options={{

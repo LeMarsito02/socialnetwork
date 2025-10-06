@@ -160,4 +160,5 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     color: "#111",
   },
+  scrollScreen: { paddingBottom: 100 },
 });
