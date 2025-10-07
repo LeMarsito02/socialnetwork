@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { AuthProvider } from "@/contexts/AuthContext";
-
+import {PostProvider} from "@/contexts/PostContext";
 export default function RootLayout() {
   // Detecta si el sistema está en dark/light
   const colorScheme = useColorScheme();
@@ -21,6 +21,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <PostProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
         <Stack screenOptions={{ headerShown: false }}>
@@ -38,6 +39,7 @@ export default function RootLayout() {
 
         </Stack>
       </ThemeProvider>
+      </PostProvider>
     </AuthProvider>
 
   );

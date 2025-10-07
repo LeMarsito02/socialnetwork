@@ -48,8 +48,8 @@ export default function Index() {
             style={styles.lottie}
           />
 
-          <Text style={styles.logo}>LeMarTek</Text>
-          <Text style={styles.subtitle}>Cloud for Students 🚀</Text>
+          <Text style={styles.logo}>StudentHUb</Text>
+          <Text style={styles.subtitle}>By LeMarTek</Text>
         </MotiView>
       </LinearGradient>
     );

@@ -7,9 +7,8 @@ import {
   StyleSheet,
   Image,
   Alert,
-  ScrollView,
-  Modal,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -28,15 +27,14 @@ export default function NewPostScreen() {
   const [videoUri, setVideoUri] = useState(null);
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [type, setType] = useState("post"); // "post" o "reel"
+  const [type, setType] = useState("post");
   const [loading, setLoading] = useState(false);
 
   // 📸 Tomar foto
   const handleTakePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso denegado", "Se necesita acceso a la cámara 📷");
-      return;
+      return Alert.alert("Permiso denegado", "Se necesita acceso a la cámara 📷");
     }
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
@@ -50,12 +48,11 @@ export default function NewPostScreen() {
     }
   };
 
-  // 🖼️ Elegir imagen desde galería
+  // 🖼️ Elegir imagen
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso denegado", "Se necesita acceso a tu galería 🖼️");
-      return;
+      return Alert.alert("Permiso denegado", "Se necesita acceso a tu galería 🖼️");
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -70,12 +67,11 @@ export default function NewPostScreen() {
     }
   };
 
-  // 🎬 Elegir video desde galería
+  // 🎬 Elegir video
   const handlePickVideo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso denegado", "Se necesita acceso a tu galería 📁");
-      return;
+      return Alert.alert("Permiso denegado", "Se necesita acceso a tu galería 📁");
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
@@ -88,14 +84,15 @@ export default function NewPostScreen() {
     }
   };
 
-  // 🔹 Subir imagen a Supabase
-  const uploadImageToSupabase = async (uri) => {
+  // 🔹 Subir archivo (imagen o video) a Supabase
+  const uploadMediaToSupabase = async (uri, isVideo = false) => {
     if (!user?.id) throw new Error("Usuario no autenticado");
+
     try {
       const extFromUri =
-        uri.split(".").pop()?.split("?")[0]?.split("#")[0] || "jpg";
-      const fileExt = extFromUri.length <= 5 ? extFromUri : "jpg";
-      const fileName = `post-${Date.now()}.${fileExt}`;
+        uri.split(".").pop()?.split("?")[0]?.split("#")[0] || (isVideo ? "mp4" : "jpg");
+      const fileExt = extFromUri.length <= 5 ? extFromUri : isVideo ? "mp4" : "jpg";
+      const fileName = `${isVideo ? "reel" : "post"}-${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
       const response = await fetch(uri);
@@ -106,7 +103,7 @@ export default function NewPostScreen() {
       const { error: uploadError } = await supabase.storage
         .from("posts")
         .upload(filePath, fileData, {
-          contentType: `image/${fileExt}`,
+          contentType: `${isVideo ? "video" : "image"}/${fileExt}`,
           upsert: false,
         });
 
@@ -115,25 +112,22 @@ export default function NewPostScreen() {
       const { data } = supabase.storage.from("posts").getPublicUrl(filePath);
       return data.publicUrl;
     } catch (error) {
-      console.error("❌ Error al subir imagen:", error);
+      console.error("❌ Error al subir archivo:", error);
       throw error;
     }
   };
 
-  // 📤 Publicar post/reel
+  // 📤 Publicar
   const handlePublish = async () => {
     if (!user) {
-      Alert.alert("Error", "Debes iniciar sesión para publicar.");
-      return;
+      return Alert.alert("Error", "Debes iniciar sesión para publicar.");
     }
 
     if (type === "post" && !caption.trim() && !imageUri) {
-      Alert.alert("Error", "Escribe algo o agrega una imagen antes de publicar.");
-      return;
+      return Alert.alert("Error", "Escribe algo o agrega una imagen antes de publicar.");
     }
     if (type === "reel" && !videoUri) {
-      Alert.alert("Error", "Graba o selecciona un video antes de publicar.");
-      return;
+      return Alert.alert("Error", "Graba o selecciona un video antes de publicar.");
     }
 
     try {
@@ -142,10 +136,10 @@ export default function NewPostScreen() {
       let mediaType = "text";
 
       if (type === "reel" && videoUri) {
-        mediaUrl = videoUri; // Aquí puedes implementar subida de video a Supabase
+        mediaUrl = await uploadMediaToSupabase(videoUri, true);
         mediaType = "reel";
       } else if (imageUri) {
-        mediaUrl = await uploadImageToSupabase(imageUri);
+        mediaUrl = await uploadMediaToSupabase(imageUri, false);
         mediaType = "image";
       }
 
@@ -174,98 +168,89 @@ export default function NewPostScreen() {
     }
   };
 
-  // 🔹 Renderizado de Post
-  const renderPostContent = () => (
-    <>
-      {imageUri ? (
-        <>
-          <Image source={{ uri: imageUri }} style={styles.mediaPreview} />
-          <TextInput
-            placeholder="Escribe un caption..."
-            value={caption}
-            onChangeText={setCaption}
-            style={styles.input}
-            multiline
-          />
-          <TouchableOpacity
-            onPress={() => setImageUri(null)}
-            style={styles.removeImage}
-          >
+// 🔹 Contenido del Post actualizado
+const renderPostContent = () => (
+  <>
+    {imageUri ? (
+      <>
+        <Image source={{ uri: imageUri }} style={styles.mediaPreview} />
+        <TextInput
+          placeholder="Escribe un caption..."
+          value={caption}
+          onChangeText={setCaption}
+          style={styles.input}
+          multiline
+        />
+        <View style={{ flexDirection: "row", marginTop: 10 }}>
+          <TouchableOpacity onPress={() => setImageUri(null)} style={styles.removeImage}>
             <Text style={{ color: "#fff" }}>Quitar imagen</Text>
           </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <TextInput
-            placeholder="¿Qué estás pensando?"
-            placeholderTextColor="#777"
-            value={caption}
-            onChangeText={setCaption}
-            style={[styles.input, { minHeight: 200, textAlignVertical: "top" }]}
-            multiline
-          />
-          <TouchableOpacity
-            onPress={() => setShowImageModal(true)}
-            style={styles.uploadButton}
-          >
-            <Text style={styles.uploadText}>📸 Agregar imagen</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </>
-  );
-
-  // 🔹 Renderizado de Reel
-  const renderReelContent = () => {
-    if (videoUri) {
-      return (
-        <View style={{ alignItems: "center", marginTop: 20 }}>
-          <Text style={{ color: "#333", marginBottom: 8 }}>
-            Vista previa del Reel 🎥
-          </Text>
-          <Video
-            source={{ uri: videoUri }}
-            style={styles.videoPreview}
-            resizeMode="cover"
-            useNativeControls
-            shouldPlay={false}
-          />
-          <View style={{ flexDirection: "row", marginTop: 12 }}>
-            <TouchableOpacity
-              onPress={() => setVideoUri(null)}
-              style={[styles.removeImage, { marginRight: 8 }]}
-            >
-              <Text style={{ color: "#fff" }}>Quitar video</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowCameraModal(true)}
-              style={[styles.modalButton, { backgroundColor: "#f5f7ff" }]}
-            >
-              <Text style={{ color: "#0554F2", fontWeight: "600" }}>Regrabar</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      );
-    }
+      </>
+    ) : (
+      <>
+        <TextInput
+          placeholder="¿Qué estás pensando?"
+          placeholderTextColor="#777"
+          value={caption}
+          onChangeText={setCaption}
+          style={[styles.input, { minHeight: 200, textAlignVertical: "top" }]}
+          multiline
+        />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
+          <TouchableOpacity onPress={handlePickImage} style={styles.uploadButton}>
+            <Text style={styles.uploadText}>🖼️ Elegir imagen</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleTakePhoto} style={styles.uploadButton}>
+            <Text style={styles.uploadText}>📸 Tomar foto</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    )}
+  </>
+);
 
-    return (
-      <View style={{ padding: 20, alignItems: "center" }}>
-        <TouchableOpacity
-          style={[styles.uploadButton, { paddingVertical: 20, paddingHorizontal: 30 }]}
-          onPress={() => setShowCameraModal(true)}
-        >
-          <Text style={styles.uploadText}>🎬 Grabar Reel</Text>
-        </TouchableOpacity>
+// 🔹 Contenido del Reel actualizado (sin grabar video)
+const renderReelContent = () => (
+  <View style={{ alignItems: "center", marginTop: 20 }}>
+    {videoUri ? (
+      <>
+        <Text style={{ color: "#333", marginBottom: 8 }}>Vista previa del Reel 🎥</Text>
+        <Video
+          source={{ uri: videoUri }}
+          style={styles.videoPreview}
+          resizeMode="cover"
+          useNativeControls
+          shouldPlay={false}
+        />
 
-        <TouchableOpacity
-          style={[styles.modalButton, { marginTop: 16, width: "60%" }]}
-          onPress={handlePickVideo}
-        >
-          <Text style={styles.modalButtonText}>Elegir video desde galería</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
+        {/* Campo de descripción del Reel */}
+        <TextInput
+          placeholder="Escribe una descripción para tu Reel..."
+          value={caption}
+          onChangeText={setCaption}
+          style={[styles.input, { marginTop: 12 }]}
+          multiline
+        />
+
+        <View style={{ flexDirection: "row", marginTop: 12 }}>
+          <TouchableOpacity onPress={() => setVideoUri(null)} style={styles.removeImage}>
+            <Text style={{ color: "#fff" }}>Quitar video</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    ) : (
+      <TouchableOpacity
+        style={[styles.uploadButton, { paddingVertical: 20, paddingHorizontal: 30 }]}
+        onPress={handlePickVideo}
+      >
+        <Text style={styles.uploadText}>🎬 Elegir video desde galería</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -274,7 +259,7 @@ export default function NewPostScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.cancel}>Cancelar</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Nuevo Post</Text>
+        <Text style={styles.title}>Nuevo {type === "reel" ? "Reel" : "Post"}</Text>
         <TouchableOpacity onPress={handlePublish} disabled={loading}>
           {loading ? <ActivityIndicator color="#0554F2" /> : <Text style={styles.postButton}>Publicar</Text>}
         </TouchableOpacity>
@@ -300,48 +285,20 @@ export default function NewPostScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Contenido */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-        {type === "post" && renderPostContent()}
-        {type === "reel" && renderReelContent()}
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        {type === "post" ? renderPostContent() : renderReelContent()}
       </ScrollView>
 
-      {/* Modal cámara reels */}
+      {/* Modal cámara */}
       <CameraModalReel
         visible={showCameraModal}
         onClose={() => setShowCameraModal(false)}
-        onSelect={(uri) => {
+        onVideoRecorded={(uri) => {
           setVideoUri(uri);
           setType("reel");
           setShowCameraModal(false);
         }}
       />
-
-      {/* Modal imagen */}
-      <Modal
-        visible={showImageModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowImageModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Agregar imagen</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={handleTakePhoto}>
-              <Text style={styles.modalButtonText}>Tomar foto</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={handlePickImage}>
-              <Text style={styles.modalButtonText}>Elegir desde galería</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelModalButton]}
-              onPress={() => setShowImageModal(false)}
-            >
-              <Text style={[styles.modalButtonText, { color: "#FF3B30" }]}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -351,106 +308,52 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
+    padding: 16,
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#ccc",
   },
-  cancel: { color: "#999", fontSize: 16 },
-  title: { fontSize: 18, fontWeight: "bold" },
-  postButton: { color: "#0554F2", fontSize: 16, fontWeight: "bold" },
+  cancel: { color: "#555", fontSize: 16 },
+  title: { fontWeight: "bold", fontSize: 17 },
+  postButton: { color: "#0554F2", fontWeight: "600", fontSize: 16 },
   tabs: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#eee",
-    paddingVertical: 10,
+    justifyContent: "center",
+    borderBottomWidth: 1,
+    borderColor: "#ddd",
   },
-  tab: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
+  tab: { flex: 1, padding: 12, alignItems: "center" },
+  activeTab: { borderBottomWidth: 2, borderBottomColor: "#0554F2" },
+  tabText: { fontSize: 15, fontWeight: "500" },
+  input: {
+    backgroundColor: "#f2f2f2",
     borderRadius: 10,
+    padding: 12,
+    marginVertical: 8,
   },
-  activeTab: { backgroundColor: "#e8f0fe" },
-  tabText: { fontSize: 16, fontWeight: "600" },
   mediaPreview: {
     width: "100%",
     height: 300,
-    marginTop: 16,
-    borderRadius: 12,
-    backgroundColor: "#000",
-  },
-  videoPreview: {
-    width: 300,
-    height: 400,
-    borderRadius: 12,
-    backgroundColor: "#000",
-  },
-  input: {
-    marginTop: 16,
-    marginHorizontal: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 10,
-    fontSize: 16,
-    minHeight: 80,
-    backgroundColor: "#fafafa",
-    color: "#000000",
+    marginBottom: 12,
   },
   uploadButton: {
-    marginTop: 40,
-    marginHorizontal: 40,
-    paddingVertical: 20,
-    backgroundColor: "#f0f4ff",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#0554F2",
-  },
-  uploadText: { fontSize: 18, fontWeight: "600", color: "#0554F2" },
-  removeImage: {
-    marginTop: 16,
-    marginHorizontal: 40,
-    backgroundColor: "#FF3B30",
-    paddingVertical: 12,
+    backgroundColor: "#e8f0ff",
+    padding: 12,
     borderRadius: 10,
     alignItems: "center",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
+  uploadText: { color: "#0554F2", fontWeight: "600" },
+  removeImage: {
+    backgroundColor: "#ff4d4d",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
   },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
+  videoPreview: { width: "100%", height: 300, borderRadius: 10 },
   modalButton: {
-    backgroundColor: "#f5f7ff",
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginVertical: 6,
+    backgroundColor: "#e8e8e8",
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
   },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0554F2",
-  },
-  cancelModalButton: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#eee",
-  },
+  modalButtonText: { color: "#333", fontWeight: "600" },
 });
