@@ -82,7 +82,7 @@ export const PostProvider = ({ children }) => {
           comments_count,
           created_at,
           media_type,
-          caption,
+          caption,  
           profiles (
             id, username, avatar_url
           )
@@ -128,44 +128,46 @@ export const PostProvider = ({ children }) => {
     }
   };
 
-  // 💬 Obtener comentarios
-  const fetchComments = async (postId) => {
-    try {
-      setLoadingComments(true);
-      const { data, error } = await supabase
-        .from("post_comments")
-        .select(
-          `
-          id,
-          content,
-          created_at,
-          profiles (
-            id, username, avatar_url
-          )
+const fetchComments = async (postId) => {
+  try {
+    setLoadingComments(true);
+    const { data, error } = await supabase
+      .from("post_comments")
+      .select(
         `
+        id,
+        content,
+        created_at,
+        profiles (
+          id, username, avatar_url
         )
-        .eq("post_id", postId)
-        .order("created_at", { ascending: true });
+      `
+      )
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      const processed = data.map((c) => {
-        const username = c.profiles?.username || "User";
-        const avatar_url =
-          c.profiles?.avatar_url ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            username
-          )}&background=random&color=ffffff&rounded=true&size=128`;
-        return { ...c, profiles: { ...c.profiles, avatar_url } };
-      });
+    const processed = data.map((c) => {
+      const username = c.profiles?.username || "User";
+      const avatar_url =
+        c.profiles?.avatar_url ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          username
+        )}&background=random&color=ffffff&rounded=true&size=128`;
+      return { ...c, profiles: { ...c.profiles, avatar_url } };
+    });
 
-      setComments(processed);
-    } catch (err) {
-      console.error("Error fetching comments:", err);
-    } finally {
-      setLoadingComments(false);
-    }
-  };
+    setComments(processed); // actualiza el estado global
+    return processed;        // retorna los comentarios para usar en ReelItem
+  } catch (err) {
+    console.error("Error fetching comments:", err);
+    return [];
+  } finally {
+    setLoadingComments(false);
+  }
+};
+
 
   // ❤️ Like / Dislike
   const handleLike = async (postId, liked) => {

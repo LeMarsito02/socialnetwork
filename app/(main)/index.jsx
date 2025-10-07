@@ -1,3 +1,4 @@
+// HomeScreen.jsx
 import React, { useContext, useState } from "react";
 import {
   View,
@@ -64,12 +65,28 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Nav Bar */}
+      <View style={styles.navBar}>
+        <Text accessibilityRole="header" style={styles.navTitle}>
+          Inicio
+        </Text>
+        <TouchableOpacity
+          accessibilityLabel="Ir a mensajería"
+          accessibilityHint="Abre la pantalla de chat"
+          onPress={() => router.push("/chat")}
+          style={styles.navButton}
+        >
+          <MessageCircle size={22} color="#0554F2" />
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
         onRefresh={fetchPosts}
         refreshing={loading}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item, index }) => (
           <MotiView
             from={{ opacity: 0, translateY: 40 }}
@@ -85,7 +102,12 @@ export default function HomeScreen() {
 
             {/* Contenido */}
             {item.media_url ? (
-              <Image source={{ uri: item.media_url }} style={styles.postImage} />
+              <>
+                <Image source={{ uri: item.media_url }} style={styles.postImage} />
+                {item.caption ? (
+                  <Text style={styles.captionText}>{item.caption}</Text>
+                ) : null}
+              </>
             ) : (
               <Text style={styles.textPostContent}>{item.caption}</Text>
             )}
@@ -128,6 +150,7 @@ export default function HomeScreen() {
             </View>
           </MotiView>
         )}
+
       />
 
       {/* Modal de comentarios */}
@@ -161,9 +184,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
               )}
-              ListEmptyComponent={
-                <Text style={styles.noCommentsText}>Aún no hay comentarios 😄</Text>
-              }
+              ListEmptyComponent={<Text style={styles.noCommentsText}>Aún no hay comentarios 😄</Text>}
             />
 
             {/* Input de comentario */}
@@ -199,6 +220,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f4f6f9" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f4f6f9" },
   loadingText: { marginTop: 12, color: "#0554F2", fontWeight: "600" },
+
+  // NavBar
+  navBar: {
+    width: "100%",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f4f6f9",
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+  },
+  navTitle: { fontSize: 18, fontWeight: "700", color: "#222" },
+  navButton: {
+    padding: 8,
+    borderRadius: 999,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
   postCard: {
     backgroundColor: "#fff",
@@ -287,4 +328,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  captionText: {
+  fontSize: 14,
+  color: "#333",
+  marginTop: 6,
+  marginHorizontal: 4,
+},
 });

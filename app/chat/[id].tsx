@@ -19,6 +19,7 @@ import {
 import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/utils/supabase";
+import { Video, ResizeMode } from "expo-av";
 
 export default function ChatDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id: string }>();
@@ -36,11 +37,14 @@ export default function ChatDetailScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   const placeholderFor = (username?: string | null, id?: string | null, size = 128) => {
-  if (username && username.trim().length > 0) {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&color=ffffff&rounded=true&size=${size}`;
-  }
-  return `https://i.pravatar.cc/150?u=${encodeURIComponent(id || "unknown")}`;
-};
+    if (username && username.trim().length > 0) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        username
+      )}&background=random&color=ffffff&rounded=true&size=${size}`;
+    }
+    return `https://i.pravatar.cc/150?u=${encodeURIComponent(id || "unknown")}`;
+  };
+
   useEffect(() => {
     if (!chatId || !user) return;
     fetchMessages(chatId);
@@ -51,7 +55,11 @@ export default function ChatDetailScreen() {
         others.length > 1
           ? others.map((o) => o.username || "Usuario").join(", ")
           : others[0]?.username || "Usuario";
-      setChatInfo({ displayName, avatar: others[0]?.avatar_url ?? placeholderFor(others[0]?.username, others[0]?.id) });
+      setChatInfo({
+        displayName,
+        avatar:
+          others[0]?.avatar_url ?? placeholderFor(others[0]?.username, others[0]?.id),
+      });
     }
   }, [chatId, user, chats]);
 
@@ -69,37 +77,53 @@ export default function ChatDetailScreen() {
   const handleAttachment = async () => {
     if (!chatId || !user) return;
 
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "*/*",
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) return;
-    const file = result.assets[0];
-
     try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      const fileUri = asset?.uri;
+      const fileName = asset?.name || `archivo_${Date.now()}`;
+
+      if (!fileUri) throw new Error("No se pudo obtener el URI del archivo");
+
       setSending(true);
 
+      // Determinar tipo de media por extensión
       let mediaType: "image" | "video" | "audio" | "file" = "file";
-      if (file.mimeType?.startsWith("image")) mediaType = "image";
-      else if (file.mimeType?.startsWith("video")) mediaType = "video";
-      else if (file.mimeType?.startsWith("audio")) mediaType = "audio";
+      const extension = fileName.split(".").pop()?.toLowerCase();
+      if (extension) {
+        if (["png", "jpg", "jpeg", "gif", "webp"].includes(extension)) mediaType = "image";
+        else if (["mp4", "mov", "mkv"].includes(extension)) mediaType = "video";
+        else if (["mp3", "wav", "ogg"].includes(extension)) mediaType = "audio";
+      }
 
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      // Convertir URI a formato compatible con Supabase
+      const response = await fetch(fileUri);
+      const arrayBuffer = await response.arrayBuffer();
+      const blob = new Uint8Array(arrayBuffer);
+
+      const filePath = `${user.id}/${Date.now()}_${fileName}`;
+
+      // Subir archivo a Supabase
       const { error: uploadError } = await supabase.storage
         .from("chat_media")
-        .upload(filePath, {
-          uri: file.uri,
-          type: file.mimeType || "application/octet-stream",
-          name: file.name,
-        } as any);
+        .upload(filePath, blob);
 
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage.from("chat_media").getPublicUrl(filePath);
-      const mediaUrl = publicUrlData?.publicUrl;
+      // Obtener URL pública
+      const { data } = supabase.storage.from("chat_media").getPublicUrl(filePath);
+      const mediaUrl = data?.publicUrl;
+      if (!mediaUrl) throw new Error("No se pudo obtener la URL pública");
 
+      // Enviar mensaje con archivo adjunto
       await sendMessage(chatId, undefined, mediaType, mediaUrl);
+
       scrollToEnd();
     } catch (error) {
       console.error("❌ Error al subir archivo:", error);
@@ -157,11 +181,23 @@ export default function ChatDetailScreen() {
                 isPending && { opacity: 0.6 },
               ]}
             >
+              {/* Imagen */}
               {item.media_type === "image" && item.media_url ? (
                 <Image source={{ uri: item.media_url }} style={styles.image} />
-              ) : item.media_type && item.media_url ? (
+              ) : 
+              /* Video */
+              item.media_type === "video" && item.media_url ? (
+                <Video
+                  source={{ uri: item.media_url }}
+                  style={styles.image}
+                  useNativeControls
+                  resizeMode={ResizeMode.COVER}
+                />
+              ) : 
+              /* Audio o documento */
+              item.media_type && item.media_url ? (
                 <Text style={{ color: isMine ? "#fff" : "#333" }}>
-                  📎 Archivo {item.media_type}
+                  📎 {item.media_type.toUpperCase()} - {item.message || "Archivo adjunto"}
                 </Text>
               ) : (
                 <Text style={[styles.messageText, isMine && { color: "#fff" }]}>
@@ -169,7 +205,14 @@ export default function ChatDetailScreen() {
                 </Text>
               )}
 
-              <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
                 {isPending && <ActivityIndicator size="small" color="#ccc" />}
                 <Text style={[styles.messageTime, isMine && { color: "#eee" }]}>
                   {new Date(item.created_at).toLocaleTimeString([], {

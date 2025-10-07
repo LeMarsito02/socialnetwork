@@ -278,7 +278,6 @@ const renderReelContent = () => (
           style={[styles.tab, type === "reel" && styles.activeTab]}
           onPress={() => {
             setType("reel");
-            setShowCameraModal(true);
           }}
         >
           <Text style={[styles.tabText, { color: type === "reel" ? "#0554F2" : "#333" }]}>Reel</Text>
